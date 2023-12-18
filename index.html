@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>SlackAround</title>
+</head>
+
+<body>
+	<div id="status"></div>
+	<button id="wake">Stay Awake</button>
+	<script>
+		const status = document.querySelector("#status");
+		const wakeBtn = document.querySelector("#wake");
+		let isSupported = false;
+
+		if ("wakeLock" in navigator) {
+			isSupported = true;
+			status.textContent = "Supported"
+		} else {
+			wakeBtn.disabled = true;
+			status.textContent = "Not Supported"
+		}
+
+		if (isSupported) {
+			let wakeLock = null;
+			const requestWakeLock = async () => {
+				try {
+					wakeLock = await navigator.wakeLock.request("screen");
+				} catch (err) {
+					console.error(err);
+				}
+			}
+
+			wakeBtn.addEventListener("click", () => {
+				if (!wakeLock) {
+					requestWakeLock();
+					wakeBtn.textContent = "Release";
+				} else {
+					wakeLock.release()
+						.then(() => {
+							wakeLock = null;
+						});
+						wakeBtn.textContent = "Stay Awake";
+				}
+			});
+		}
+	</script>
+</body>
+
+</html>

@@ -4,46 +4,168 @@
 <head>
 	<meta charset="UTF-8">
 	<title>SlackAround</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+	<style>
+		body {
+			background-color: #F4EDE4;
+			font-family: Roboto;
+		}
+
+		.button {
+
+			background-color: transparent;
+			color: #611F69;
+			border-color: #611F69;
+			border-radius: 100px;
+			width: 122px;
+			height: 40px;
+			border-width: 1px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+		}
+
+		.button.focus {
+			background-color: #611F69;
+			color: white;
+		}
+
+		.button:not(:last-child) {
+			margin-bottom: 12px;
+		}
+
+		#container {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			text-align: center;
+		}
+
+		#buttons {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+
+		h1 {
+			font-size: 50px;
+			margin-bottom: 0.5em;
+		}
+
+		h2 {
+			font-size: 30px;
+			font-weight: 500;
+			margin-top: 1.33em;
+		}
+
+		h2 strong {
+			font-size: 35px;
+			font-weight: 700;
+		}
+
+		h3 {
+			width: 708px;
+			white-space: wrap;
+			font-weight: 400;
+			font-size: 18px;
+		}
+	</style>
 </head>
 
 <body>
-	<div id="status"></div>
-	<button id="wake">Stay Awake</button>
-	<script>
-		const status = document.querySelector("#status");
-		const wakeBtn = document.querySelector("#wake");
-		let isSupported = false;
+	<div id="container">
+		<div id="content">
+			<h1>Slacking around aren’t ya?</h1>
+			<div id="buttons">
+				<button id="wake" class="button">Stay Awake</button>
+				<button id="sleep" class="button">Can Sleep</button>
+			</div>
+			<h2>
+				This should work on Chrome, Edge, Opera and Safari<br /><strong>as long as this page is in
+					focus.</strong><br />By "Should" we mean use it at your own risk :)
+			</h2>
+			<h3>
+				When “Stay Awake” is enabled and this page is in focus (in front), your PC will remain awake and your
+				slack status should remain green. In case you are using a managed computer or network, your admin can
+				see that you visited this URL.
+			</h3>
+		</div>
+	</div>
 
+	<script>
+		const wakeBtn = document.querySelector("#wake");
+		const sleepBtn = document.querySelector("#sleep");
+		const audio = new Audio("notification.mp3");
+		audio.load();
+
+		let isSupported = false;
+		let wakeLock = null;
+		let shouldAutoAcquire = false;
 		if ("wakeLock" in navigator) {
 			isSupported = true;
-			status.textContent = "Supported"
 		} else {
 			wakeBtn.disabled = true;
-			status.textContent = "Not Supported"
+			console.error("WakeLock API is not supported!");
 		}
 
 		if (isSupported) {
-			let wakeLock = null;
-			const requestWakeLock = async () => {
-				try {
-					wakeLock = await navigator.wakeLock.request("screen");
-				} catch (err) {
-					console.error(err);
+
+			const setButtonsState = () => {
+				if (wakeLock) {
+					wakeBtn.classList.add("focus");
+					sleepBtn.classList.remove("focus");
+				} else {
+					wakeBtn.classList.remove("focus");
+					sleepBtn.classList.add("focus");
 				}
 			}
 
+			const acquireWakeLock = async () => {
+				if (wakeLock) {
+					return;
+				}
+				try {
+					wakeLock = await navigator.wakeLock.request("screen");
+					wakeLock.addEventListener("release", (e) => {
+						wakeLock = null;
+						setButtonsState();
+					});
+				} catch (err) {
+					console.error("Error while acquiring WakeLock:", err);
+				}
+				setButtonsState();
+			}
+
 			wakeBtn.addEventListener("click", () => {
-				if (!wakeLock) {
-					requestWakeLock();
-					wakeBtn.textContent = "Release";
-				} else {
-					wakeLock.release()
-						.then(() => {
-							wakeLock = null;
-						});
-						wakeBtn.textContent = "Stay Awake";
+				shouldAutoAcquire = true;
+				acquireWakeLock();
+			});
+			sleepBtn.addEventListener("click", () => {
+				shouldAutoAcquire = false;
+				wakeLock.release();
+			});
+			document.addEventListener("visibilitychange", () => {
+				audio.pause();
+				audio.currentTime = 0;
+				if (shouldAutoAcquire) {
+					if ("visible" === document.visibilityState) {
+						acquireWakeLock();
+					} else {
+						audio.play();
+					}
 				}
 			});
+
+			setButtonsState();
 		}
 	</script>
 </body>

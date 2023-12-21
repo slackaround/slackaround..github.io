@@ -92,6 +92,10 @@
 			font-weight: 400;
 			font-size: 18px;
 		}
+
+		#mobile {
+			display: none;
+		}
 	</style>
 </head>
 
@@ -108,14 +112,40 @@
 					focus.</strong><br />By "Should" we mean use it at your own risk :)
 			</h2>
 			<h3>
-				When "Stay Awake" is enabled and this page is in focus (in front), your PC will remain 
-				awake and your slack status should remain green, you'll hear bells when out of focus. 
+				When "Stay Awake" is enabled and this page is in focus (in front), your PC will remain
+				awake and your slack status should remain green, you'll hear bells when out of focus.
 				In case you are using a managed computer or network, your admin can see that you visited this URL.
 			</h3>
+			<div id="donate-button-container">
+				<div id="donate-button"></div>
+				<script src="https://www.paypalobjects.com/donate/sdk/donate-sdk.js" charset="UTF-8"></script>
+				<script>
+					PayPal.Donation.Button({
+						env: 'production',
+						hosted_button_id: 'RCRTBHT8FV4V2',
+						image: {
+							src: 'https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif',
+							alt: 'Donate with PayPal button',
+							title: 'PayPal - The safer, easier way to pay online!',
+						}
+					}).render('#donate-button');
+				</script>
+			</div>
+		</div>
+		<div id="mobile">
+			<h1>
+				Slack around on your computer, not on your mobile :)
+			</h1>
 		</div>
 	</div>
 
 	<script>
+		if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+			// mobile
+			document.querySelector("#mobile").style.display = "block";
+			document.querySelector("#content").style.display = "none";
+		}
+
 		const wakeBtn = document.querySelector("#wake");
 		const sleepBtn = document.querySelector("#sleep");
 		const audio = new Audio("notification.mp3");
